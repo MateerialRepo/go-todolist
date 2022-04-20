@@ -1,12 +1,15 @@
 package todo_list
 
 import (
+	"context"
 	"github.com/MateerialRepo/golang-todo/pkg/router"
 	"github.com/MateerialRepo/golang-todo/pkg/utils"
 	"github.com/thedevsaddam/renderer"
 	"gopkg.in/mgo.v2"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"time"
 )
 
@@ -52,6 +55,8 @@ func dbInit() {
 }
 
 func main() {
+	stopChan := make(chan os.Signal)
+	signal.Notify(stopChan, os.Interrupt)
 	r := router.Router()
 
 	srv := &http.Server{
@@ -69,4 +74,12 @@ func main() {
 			log.Printf("listen:%s\n", err)
 		}
 	}()
+
+	<-stopChan
+	log.Println("Shutting down server")
+	contxt, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	srv.Shutdown(contxt)
+	defer cancel(
+		log.Println("Server has been stopped")
+		)
 }
